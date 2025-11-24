@@ -10,7 +10,7 @@ import jwt
 from datetime import datetime, timedelta
 
 from sqlalchemy.util import deprecated
-
+# separating_main
 # Security Config
 SECRET_KEY = "backEndProject"
 ALGORITHM ="HS256"
