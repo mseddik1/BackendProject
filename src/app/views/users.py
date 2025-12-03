@@ -12,7 +12,7 @@ from fastapi import APIRouter
 
 
 
-users_router = APIRouter(prefix="/users")
+users_router = APIRouter(prefix="/users", tags=["Users"])
 
 
 
@@ -31,7 +31,7 @@ def verify_token_endpoint(current_user:dbmodels.User = Depends(services.get_curr
 
 @users_router.get("/{user_id}", response_model= schemas.UserResponse)
 def get_user(user_id: int, current_user:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db) ):
-    return services.get_user(user_id, current_user, db)
+    return services.get_user(user_id, db)
 
 @users_router.post("/create", response_model= schemas.UserResponse)
 def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db)):
