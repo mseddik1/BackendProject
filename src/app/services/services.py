@@ -20,8 +20,6 @@ def get_current_user(token: str=Depends(security.oauth2_scheme), db: Session =De
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "User does not exist!", headers={"WWW-Authenticate":"Bearer"})
     return user
 
-
-
 def get_current_active_user(current_user: dbmodels.User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= "Inactive user!", headers={"WWW-Authenticate":"Bearer"})
@@ -49,7 +47,6 @@ def register_user(user:schemas.UserCreate, db: Session ):
     db.refresh(db_user)
     return db_user
 
-
 def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     user = db.query(dbmodels.User).filter(dbmodels.User.email==form_data.username).first()
 
@@ -72,7 +69,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
 def root() :
     return {"message":"Using SQL with FastAPI! "}
 
-
 def get_profile(current_user:dbmodels.User ):
     return current_user
 
@@ -84,12 +80,11 @@ def verify_token_endpoint(current_user:dbmodels.User ):
             "name": current_user.name,
             "email": current_user.email,
             "role": current_user.role
+
         }
     }
 
-
-
-def get_user(user_id: int, current_user:dbmodels.User, db: Session):
+def get_user(user_id: int, db: Session):
     user = db.query(dbmodels.User).filter(dbmodels.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code= 404, detail = "user not found!")
@@ -112,15 +107,14 @@ def create_user(user: schemas.UserCreate, current_user:dbmodels.User, db: Sessio
 
     return db_user
 
-
-
-
 def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User , db: Session ):
     user_db = db.query(dbmodels.User).filter(dbmodels.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code= 404, detail = "user not found!")
 
-    for field, value in user.dict().items():
+    update_data = user.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
         if value is not None:
             if field == "password":
                 hashed_pwd = security.hash_pwd(user.password)
@@ -131,8 +125,6 @@ def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.Us
     db.commit()
     db.refresh(user_db)
     return user_db
-
-
 
 def detele_user(user_id:int, current_user:dbmodels.User , db: Session ):
     user_db = db.query(dbmodels.User).filter(dbmodels.User.id == user_id).first()
@@ -147,8 +139,78 @@ def detele_user(user_id:int, current_user:dbmodels.User , db: Session ):
 
     return {"message":"User deleted!"}
 
-
 def get_all_users(db: Session):
     return db.query(dbmodels.User).all()
+
+
+def require_admin(current_user:dbmodels.User = Depends(get_current_active_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="You are not an admin!")
+    return current_user
+
+def get_all_products(db: Session, page: int, per_page: int,_: dbmodels.User):
+    skip = (page - 1) * per_page
+    limit = per_page
+    total = db.query(dbmodels.Products).count()
+    items = db.query(dbmodels.Products).offset(skip).limit(limit).all()
+    return total, items
+
+def create_product(product: schemas.ProductCreate, db: Session, current_user: dbmodels.User):
+    if db.query(dbmodels.Products).filter(dbmodels.Products.name==product.name).first():
+        raise HTTPException(status_code=400, detail="Product already exists! ")
+    db_product = dbmodels.Products(
+        name=product.name,
+        description=product.description,
+        price=product.price,
+        in_stock=product.in_stock,
+        is_active=product.is_active,
+        updated_by = current_user.email,
+        category=product.category,
+        image_url=product.image_url
+    )
+
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
+
+def get_product_by_id(product_id: int, db: Session):
+    product = db.query(dbmodels.Products).filter(dbmodels.Products.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail = "product not found!")
+    return product
+
+def get_product_by_name(name:str, db: Session):
+    product = db.query(dbmodels.Products).filter(dbmodels.Products.name==name).first()
+    if not product:
+        raise HTTPException(status_code=404, detail = "product not found!")
+    return product
+
+def update_product(product_id: int, product: schemas.ProductUpdate, db: Session, current_user: dbmodels.User ):
+    product_db = db.query(dbmodels.Products).filter(dbmodels.Products.id == product_id).first()
+    if not product_db:
+        raise HTTPException(status_code=404, detail = "product not found!")
+
+    update_data = product.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        setattr(product_db, field, value)
+    product_db.updated_by = current_user.email
+
+
+    db.commit()
+    db.refresh(product_db)
+    return product_db
+
+def delete_product(product_id: int, db: Session):
+    product_db = db.query(dbmodels.Products).filter(dbmodels.Products.id == product_id).first()
+    if not product_db:
+        raise HTTPException(status_code=404, detail = "product not found!")
+    db.delete(product_db)
+    db.commit()
+    return {"message":"Product deleted!"}
+
+
+
 
 
