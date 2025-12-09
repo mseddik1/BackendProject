@@ -1,4 +1,8 @@
+import threading
+
 from fastapi import FastAPI
+
+from src.app.workers import jobs
 from src.app.views.auth import auth_router
 from src.app.views.users import users_router
 from src.app.views.products import products_router
@@ -16,5 +20,12 @@ app.include_router(products_router)
 def root() :
     return services.root()
 
+
+@app.on_event("startup")
+def start_background_workers():
+    # Start the publish_product worker in a background thread
+    t = threading.Thread(target=jobs.worker_loop, daemon=True)
+    t.start()
+    print("[MAIN] Background worker thread started")
 
 
