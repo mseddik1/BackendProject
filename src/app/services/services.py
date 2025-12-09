@@ -1,9 +1,12 @@
 from datetime import timedelta
 
 from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+
+from src.app.enums import enums
 from src.app.schemas import schemas
 from src.app.core import security
 from src.app.db.base import get_db
@@ -126,7 +129,7 @@ def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.Us
     db.refresh(user_db)
     return user_db
 
-def detele_user(user_id:int, current_user:dbmodels.User , db: Session ):
+def delete_user(user_id:int, current_user:dbmodels.User , db: Session ):
     user_db = db.query(dbmodels.User).filter(dbmodels.User.id == user_id).first()
     if not user_db:
         raise HTTPException(status_code= 404, detail = "user not found!")
@@ -163,7 +166,6 @@ def create_product(product: schemas.ProductCreate, db: Session, current_user: db
         description=product.description,
         price=product.price,
         in_stock=product.in_stock,
-        is_active=product.is_active,
         updated_by = current_user.email,
         category=product.category,
         image_url=product.image_url
@@ -211,6 +213,23 @@ def delete_product(product_id: int, db: Session):
     return {"message":"Product deleted!"}
 
 
+def publish_product(product_id: int, db: Session):
+    product_db = db.query(dbmodels.Products).filter(dbmodels.Products.id == product_id).first()
+    if not product_db:
+        raise HTTPException(status_code=404, detail = "product not found!")
 
+    product_schema = schemas.Product.from_orm(product_db)
+    payload = jsonable_encoder(product_schema, exclude_unset=True)
 
+    job = dbmodels.Job(
+        type = enums.JobType.PUBLISH_PRODUCT.value,
+        payload = payload
+    )
 
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return {
+        "msg" : "Publishing Queued!",
+        "payload" : job.payload
+        }
