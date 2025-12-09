@@ -18,3 +18,7 @@
 [CLEANUP] Removed old backup: db_backup_20251204_002301.sqlite3
 [OK] Backup created: /Users/mseddik/IdeaProjects/Backend Project I/src/app/backups/db_backup_20251204_003101.sqlite3
 [CLEANUP] Removed old backup: db_backup_20251204_002400.sqlite3
+[OK] Backup created: /Users/mseddik/IdeaProjects/Backend Project I/src/app/backups/db_backup_20251207_140000.sqlite3
+[CLEANUP] Removed old backup: db_backup_20251204_003103.sqlite3
+[OK] Backup created: /Users/mseddik/IdeaProjects/Backend Project I/src/app/backups/db_backup_20251209_140000.sqlite3
+[CLEANUP] Removed old backup: db_backup_20251204_003104.sqlite3

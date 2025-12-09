@@ -44,3 +44,8 @@ def update_product(product_id:int, product: schemas.ProductUpdate, db: Session =
 @products_router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_product(product_id:int, db: Session = Depends(get_db), _:dbmodels.User = Depends(services.require_admin)):
     return services.delete_product(product_id, db)
+
+
+@products_router.put("/publish/{product_id}")
+def publish_product(product_id:int, db: Session = Depends(get_db), current_user:dbmodels.User = Depends(services.require_admin)):
+    return services.publish_product(product_id, db)
