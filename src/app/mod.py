@@ -8,9 +8,12 @@ with engine.connect() as conn:
     #        ALTER TABLE products
     #        ADD COLUMN updated_by VARCHAR(100) NOT NULL DEFAULT 'system';
     #    """))
-    conn.execute(text("UPDATE products SET updated_by = 'admin' WHERE updated_by = 'system'"))
+    # conn.execute(text("UPDATE products SET updated_by = 'admin' WHERE updated_by = 'system'"))
     # print(conn.execute(text("SELECT * FROM users WHERE email = 'mseddik@noon.com';")).fetchall())
-    print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
+    # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
+    print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
+
+
 
 
     conn.commit()

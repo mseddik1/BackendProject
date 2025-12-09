@@ -40,7 +40,6 @@ class ProductCreate(BaseModel):
     description: Optional[str] = None
     price: float
     in_stock: Optional[bool] = True
-    is_active: Optional[bool] = True
     category: Optional[str] = None
     image_url: Optional[str] = None
 
@@ -70,6 +69,8 @@ class Product(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
+
 
 
 
