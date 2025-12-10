@@ -12,6 +12,7 @@ from src.app.core import security
 from src.app.db.base import get_db
 from src.app.models import dbmodels
 from src.app.core.config import settings
+from fastapi.responses import JSONResponse
 
 
 
@@ -59,9 +60,30 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive!", headers={"WWW-Authenticate":"Bearer"})
 
-    access_token_expires = timedelta(minutes=settings.TOKEN_EXPIRES)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
+    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRES)
     access_token= security.create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
-    return {"access_token":access_token, "token_type":"bearer"}
+    refresh_token = security.create_refresh_token(data ={"sub":user.email}, expires_delta=refresh_token_expires)
+
+    response = JSONResponse(
+        content={
+            "access_token": access_token,
+            "token_type": "bearer",
+        }
+    )
+    # HTTP-only refresh cookie
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # True in production with HTTPS
+        samesite="lax",
+        max_age=60 * 60 * 24 * settings.REFRESH_TOKEN_EXPIRES
+    )
+    return response
+
+
+
 
 
 
