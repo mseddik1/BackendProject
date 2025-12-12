@@ -12,7 +12,7 @@ class User(Base):
     email = Column(String(100),nullable=True, unique=True)
     role = Column(String(100), nullable=False)
     hashed_pwd = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True )
+    is_active = Column(Boolean, default=False, nullable=True )
     is_admin = Column(Boolean, default=False, nullable=True )
 
 
@@ -43,6 +43,8 @@ class Job(Base):
     status = Column(String(20), default="pending")  # "pending", "processing", "done", "failed"
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    attempts = Column(Integer, default=0, nullable=False )
+    max_attempts = Column(Integer, default=3, nullable=False )
 
 
 
