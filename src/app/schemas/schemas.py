@@ -1,17 +1,23 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
-    name : Optional[str] = None
-    email : Optional[str] = None
-    role :  Optional[str] = None
-    password : Optional[str] = None
-    is_active : bool
-    is_admin: bool
+    name : Optional[str]
+    email : EmailStr
+    role :  Optional[str]
+    password : Optional[str]
 
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: EmailStr = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = False
+    is_admin: Optional[bool] = False
 class UserResponse(BaseModel):
     id: int
     name : str
@@ -23,6 +29,10 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes=True
 
+
+class RegisterResponse(BaseModel):
+    user: UserResponse
+    confirm: dict
 class UserLogin(BaseModel):
     email: str
     password: str
@@ -68,7 +78,7 @@ class Product(BaseModel):
     image_url: Optional[str]
 
     class Config:
-        orm_mode = True
+        # orm_mode = True
         from_attributes = True
 
 
@@ -79,3 +89,12 @@ class ProductListResponse(BaseModel):
     per_page: int
     total: int
     items: List[Product]
+
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
