@@ -13,6 +13,13 @@ with engine.connect() as conn:
     # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
     print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
 
+    # conn.execute(text("ALTER TABLE jobs ADD COLUMN attempts BOOLEAN DEFAULT 0;"))
+    # conn.execute(text("ALTER TABLE jobs ADD COLUMN max_attempts BOOLEAN DEFAULT 3;"))
+    # conn.execute(text("UPDATE jobs SET status = 'pending' WHERE id = '4';"))
+    # conn.execute(text("UPDATE users SET is_active = 0 WHERE email = 'mahmoud.seddik@hotmail.com';"))
+
+
+
 
 
 

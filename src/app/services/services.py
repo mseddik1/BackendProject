@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Response
 
 from src.app.enums import enums
 from src.app.schemas import schemas
@@ -36,20 +36,32 @@ def get_current_active_user(current_user: dbmodels.User = Depends(get_current_us
 
 # Auth Endpoints
 def register_user(user:schemas.UserCreate, db: Session ):
-    if db.query(dbmodels.User).filter(dbmodels.User.email==user.email).first():
+    db_user =db.query(dbmodels.User).filter(dbmodels.User.email==user.email).first()
+    if db_user and db_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User exists!", headers={"WWW-Authenticate":"Bearer"})
+    confirm = security.send_confirmation_email(user, db)
+    if db_user and not db_user.is_active:
+        return {
+        "user" :db_user,
+        "confirm" : confirm
+    }
     hashed_pwd = security.hash_pwd(user.password)
     db_user = dbmodels.User(
         name = user.name,
         email = user.email,
         role= user.role,
-        hashed_pwd = hashed_pwd
+        hashed_pwd = hashed_pwd,
+        # is_active = True #I am doing this here because it is logic that registering a user will make him active, unless there is "verify your email" to activate it.
     )
+
 
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+    return {
+        "user" :db_user,
+        "confirm" : confirm
+    }
 
 def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     user = db.query(dbmodels.User).filter(dbmodels.User.email==form_data.username).first()
@@ -82,6 +94,17 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     )
     return response
 
+
+def logout(response: Response):
+    # Remove the refresh token cookie
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=True,     # keep same attributes as set_cookie
+        samesite="lax"
+    )
+
+    return {"detail": "Logged out successfully"}
 
 
 
@@ -132,7 +155,7 @@ def create_user(user: schemas.UserCreate, current_user:dbmodels.User, db: Sessio
 
     return db_user
 
-def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User , db: Session ):
+def update_user(user_id: int, user: schemas.UserUpdate, current_user:dbmodels.User , db: Session ):
     user_db = db.query(dbmodels.User).filter(dbmodels.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code= 404, detail = "user not found!")
@@ -143,7 +166,7 @@ def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.Us
         if value is not None:
             if field == "password":
                 hashed_pwd = security.hash_pwd(user.password)
-                setattr(user_db, "password", hashed_pwd)
+                setattr(user_db, "hashed_pwd", hashed_pwd)
             else:
                 setattr(user_db, field, value)
 

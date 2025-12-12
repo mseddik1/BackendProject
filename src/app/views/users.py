@@ -34,19 +34,19 @@ def get_user(user_id: int, current_user:dbmodels.User = Depends(services.get_cur
     return services.get_user(user_id, db)
 
 @users_router.post("/create", response_model= schemas.UserResponse)
-def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
    return services.create_user(user, current_user, db)
 
 
 
 
 @users_router.put("/{user_id}",response_model=schemas.UserResponse)
-def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.get_current_active_user) , db: Session = Depends(get_db)):
+def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.require_admin) , db: Session = Depends(get_db)):
    return services.update_user(user_id, user, current_user,db)
 
 
 @users_router.delete("/{user_id}" )
-def detele_user(user_id:int, current_user:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db)):
+def detele_user(user_id:int, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
    return services.detele_user(user_id, current_user, db)
 
 
