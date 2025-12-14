@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, func, JSON
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, func, JSON, ForeignKey
 from src.app.db.base import Base, engine
 
 
@@ -23,7 +23,7 @@ class Products(Base):
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(100), nullable=False)
     price = Column(Float(100), nullable=False)
-    in_stock = Column(Integer, default=True )
+    stock_quantity = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, default=False )
     # created_at = Column(DateTime, server_default=func.now())  # set on insert
     # updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())  # auto-update
@@ -32,6 +32,19 @@ class Products(Base):
     updated_by = Column(String(100), nullable=False)
     category = Column(String(100), nullable=True)
     image_url = Column(String(100), nullable=True)
+
+
+
+class InventoryMovement(Base):
+    __tablename__ = "inventory_movements"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)  # positive or negative
+    movement_type = Column(String(50), nullable=False)  # sale, restock, return
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_by = Column(String(100), nullable=False)
+    note = Column(String(255), nullable=True)
 
 
 class Job(Base):

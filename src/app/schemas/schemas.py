@@ -33,6 +33,8 @@ class UserResponse(BaseModel):
 class RegisterResponse(BaseModel):
     user: UserResponse
     confirm: dict
+    details: Optional[str]=None
+
 class UserLogin(BaseModel):
     email: str
     password: str
@@ -49,7 +51,7 @@ class ProductCreate(BaseModel):
     name: str
     description: Optional[str] = None
     price: float
-    in_stock: Optional[bool] = True
+    stock_quantity: int
     category: Optional[str] = None
     image_url: Optional[str] = None
 
@@ -58,7 +60,7 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
-    in_stock: Optional[bool] = None
+    stock_quantity: Optional[int] = None
     is_active: Optional[bool] = None
     category: Optional[str] = None
     image_url: Optional[str] = None
@@ -69,7 +71,7 @@ class Product(BaseModel):
     name: str
     description: Optional[str]
     price: float
-    in_stock: bool
+    stock_quantity: int
     is_active: bool
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
