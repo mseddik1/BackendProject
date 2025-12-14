@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from pydantic import BaseModel, EmailStr
 
@@ -100,3 +100,34 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     new_password: str
+
+
+class TrackPayload(BaseModel):
+    event: str
+
+    token_present: Optional[bool] = None
+    correlation_id: Optional[str] = None
+    client_id: Optional[str] = None
+
+    user_agent: Optional[str] = None
+    user_agent_hints: Optional[Dict[str, Any]] = None
+    languages: Optional[List[str]] = None
+    language: Optional[str] = None
+    platform: Optional[str] = None
+
+    max_touch_points: Optional[int] = None
+    hardware_concurrency: Optional[int] = None
+    device_memory_gb: Optional[float] = None
+
+    time: Optional[Dict[str, Any]] = None
+    page: Optional[Dict[str, Any]] = None
+    display: Optional[Dict[str, Any]] = None
+    preferences: Optional[Dict[str, Any]] = None
+    permissions: Optional[Dict[str, Any]] = None
+    storage: Optional[Dict[str, Any]] = None
+    capabilities: Optional[Dict[str, Any]] = None
+    network: Optional[Dict[str, Any]] = None
+    battery: Optional[Dict[str, Any]] = None
+    media: Optional[Dict[str, Any]] = None
+    webgl: Optional[Dict[str, Any]] = None
+    derived: Optional[Dict[str, Any]] = None

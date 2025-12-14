@@ -60,7 +60,13 @@ class Job(Base):
     max_attempts = Column(Integer, default=3, nullable=False )
 
 
-
+class Tracking(Base):
+    __tablename__ = "tracking"
+    id = Column(Integer, primary_key=True, index=True)
+    ip = Column(String(100), nullable=False)
+    user_agent = Column(String(100), nullable=False)
+    path = Column(String(100), nullable=False)
+    payload = Column(JSON, nullable=False)
 
 
 Base.metadata.create_all(engine)
