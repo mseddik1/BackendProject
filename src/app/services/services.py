@@ -279,3 +279,15 @@ def publish_product(product_id: int, db: Session):
         "msg" : "Publishing Queued!",
         "payload" : job.payload
         }
+
+
+def purchase_product(product_id: int, db: Session):
+    pass
+
+def get_current_stock(product_id: int, db: Session):
+    pass
+
+def restock_product(product_id: int, db: Session):
+    pass
+
+

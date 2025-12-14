@@ -11,6 +11,8 @@ from src.app.schemas import schemas
 from src.app.utils import emailUtil
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+from fastapi.responses import HTMLResponse
+
 # from jose import JWTError, jwt
 from fastapi import Cookie
 
@@ -177,6 +179,7 @@ def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session):
         <p>If the button doesn't work, you can also use this link:</p>
         <p><a href="{reset_link}">{reset_link}</a></p>
 
+
         <br>
         <p>If you did not request this password reset, you can safely ignore this email.</p>
 
@@ -309,6 +312,50 @@ def confirm_email(token: str,db: Session):
     db.commit()
     db.refresh(user)
 
-    return {
-        "detail": "Email confirmed successfully!"
-    }
+    html_content = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Email Confirmed</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f6f8;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+                .card {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    text-align: center;
+                    max-width: 420px;
+                }
+                h1 {
+                    color: #2e7d32;
+                }
+                p {
+                    color: #555;
+                    font-size: 16px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>✅ Email Confirmed</h1>
+                <p>Your email has been successfully verified.</p>
+                <p>You can now safely close this page.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+    # return {
+    #     "detail": "Email confirmed successfully!"
+    # }
+
+    return HTMLResponse(content=html_content)

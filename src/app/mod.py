@@ -1,4 +1,6 @@
 from sqlalchemy import text
+
+from app.core.config import settings
 from src.app.db.base import engine
 
 with engine.connect() as conn:
@@ -14,7 +16,9 @@ with engine.connect() as conn:
     # print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM users ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM products ;")).fetchall())inventory_movements
-    print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())
+    # print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())
+    print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
+
 
 
 
@@ -25,9 +29,10 @@ with engine.connect() as conn:
     # conn.execute(text("DELETE from users WHERE id = '9';"))
     # conn.execute(text("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 0;"))
     # conn.execute(text("ALTER TABLE products DROP COLUMN in_stock ;"))
+    # conn.execute(text("ALTER TABLE tracking ADD COLUMN user_agent STRING DEFAULT '' ;"))
+    # conn.execute(text("ALTER TABLE tracking DROP COLUMN user_agetnt ;"))
 
-
-
+    # print(settings.SECRET_KEY)
 
 
 
@@ -35,4 +40,4 @@ with engine.connect() as conn:
 
     conn.commit()
 
-print("User updated")
+print("updated")
