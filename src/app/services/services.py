@@ -43,7 +43,8 @@ def register_user(user:schemas.UserCreate, db: Session ):
     if db_user and not db_user.is_active:
         return {
         "user" :db_user,
-        "confirm" : confirm
+        "confirm" : confirm,
+        "details": "User already registered, please confirm your email!"
     }
     hashed_pwd = security.hash_pwd(user.password)
     db_user = dbmodels.User(
