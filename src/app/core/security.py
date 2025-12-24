@@ -249,7 +249,8 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
 
     token= create_confirm_email_token(user.email)
 
-    confirm_email_link = f"http://127.0.0.1:8000/auth/confirm-email?token={token}"
+    confirm_email_link = f"https://seymour-intersocial-vicenta.ngrok-free.dev/auth/confirm-email?token={token}"
+    #http://127.0.0.1:8000
     html_body = f"""
     <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
         <p>Hi {user.name} - {user.role},</p>
@@ -264,8 +265,8 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
             </a>
         </p>
 
-        <p>If the button doesn’t work, here is the link:</p>
-        <p><a href="{confirm_email_link}">{confirm_email_link}</a></p>
+        # <p>If the button doesn’t work, here is the link:</p>
+        # <p><a href="{confirm_email_link}">{confirm_email_link}</a></p>
 
         <br>
         <p>Best regards,<br>Your App Team</p>
