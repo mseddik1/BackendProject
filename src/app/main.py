@@ -46,6 +46,7 @@ def start_background_workers():
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+
     start = time.time()
 
     ip = request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
@@ -58,14 +59,14 @@ async def log_requests(request: Request, call_next):
     duration_ms = int((time.time() - start) * 1000)
 
     # Replace print with proper logging / DB insert if you want
-    print({
-        "ip": ip,
-        "ua": ua,
-        "method": method,
-        "path": path,
-        "status": response.status_code,
-        "duration_ms": duration_ms,
-    })
+    # print({
+    #     "ip": ip,
+    #     "ua": ua,
+    #     "method": method,
+    #     "path": path,
+    #     "status": response.status_code,
+    #     "duration_ms": duration_ms,
+    # })
 
     return response
 

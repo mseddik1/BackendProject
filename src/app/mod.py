@@ -15,9 +15,9 @@ with engine.connect() as conn:
     # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
     # print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM users ;")).fetchall())
-    # print(conn.execute(text("SELECT * FROM products ;")).fetchall())inventory_movements
+    print(conn.execute(text("SELECT * FROM products ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())
-    print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
+    # print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
 
 
 
