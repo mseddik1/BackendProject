@@ -1,9 +1,14 @@
-from datetime import timedelta
+import base64
+import binascii
+import json
+from datetime import timedelta, datetime
+from typing import Optional
 
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_, select
 from fastapi import HTTPException, status, Response
 
 from src.app.enums import enums
@@ -290,4 +295,122 @@ def get_current_stock(product_id: int, db: Session):
 def restock_product(product_id: int, db: Session):
     pass
 
+
+def get_products_cursor(
+    limit: int,
+    cursor: Optional[str],
+    db: Session
+
+):
+
+    print("WE ARE INSIDE!")
+    """
+    This SAME function handles:
+    - First request (cursor is None)
+    - Next request (cursor is provided)
+    """
+
+    # -----------------------
+    # CASE 1: FIRST REQUEST
+    # -----------------------
+    total = db.query(dbmodels.Products).count()
+
+    if cursor is None:
+        count = db.query(dbmodels.Products).order_by(dbmodels.Products.created_at.desc(),dbmodels.Products.id.desc()).count()
+
+
+        limit = min(limit, count)
+        products = db.execute(select(dbmodels.Products.id, dbmodels.Products.name, dbmodels.Products.description, dbmodels.Products.price, dbmodels.Products.stock_quantity, dbmodels.Products.created_at)
+                              .order_by(dbmodels.Products.created_at.desc(),dbmodels.Products.id.desc()).limit(limit)).mappings().all()
+
+        query = """
+        SELECT id, name, description, price, in_stock, stock_quantity
+        FROM products
+        ORDER BY created_at DESC, id DESC
+        LIMIT :limit
+        """
+        params = {"limit": limit}
+
+    else:
+        last_created_at, last_id = decode_cursor(cursor)
+
+        count = db.query(dbmodels.Products).filter(
+            or_(dbmodels.Products.created_at < last_created_at,
+               and_(
+                    dbmodels.Products.created_at == last_created_at,
+                    dbmodels.Products.id < last_id
+                ))).order_by(
+            dbmodels.Products.created_at.desc(),
+        dbmodels.Products.id.desc()
+        ).count()
+
+        limit = min(limit, count)
+        products = db.execute(select(dbmodels.Products.id, dbmodels.Products.name, dbmodels.Products.description, dbmodels.Products.price, dbmodels.Products.stock_quantity, dbmodels.Products.created_at)
+                              .where(
+            or_(dbmodels.Products.created_at < last_created_at,
+               and_(
+                    dbmodels.Products.created_at == last_created_at,
+                    dbmodels.Products.id < last_id
+                ))
+        ).order_by(
+            dbmodels.Products.created_at.desc(),
+        dbmodels.Products.id.desc()
+        ).limit(limit)).mappings().all()
+
+
+
+        query = """
+        SELECT id, name, description, price, in_stock, stock_quantity
+        FROM products
+        WHERE
+            (created_at < :created_at)
+            OR (created_at = :created_at AND id < :id)
+        ORDER BY created_at DESC, id DESC
+        LIMIT :limit
+        """
+        params = {
+            "created_at": last_created_at,
+            "id": last_id,
+            "limit": limit
+        }
+
+
+
+
+
+    if products:
+        last_row = products[-1]
+
+        next_cursor = encode_cursor(
+            last_row["created_at"],
+            last_row["id"]
+        )
+        return {
+            "data": products,
+            "next_cursor": next_cursor
+        }
+    else:
+        return {"message": "That's it for now :) you are up to date!"}
+
+
+
+
+
+
+def encode_cursor(created_at: datetime, post_id: int) -> str:
+    payload = {
+        "created_at": created_at.isoformat(),
+        "id": post_id
+    }
+    json_str = json.dumps(payload)
+    return base64.urlsafe_b64encode(json_str.encode()).decode()
+
+def decode_cursor(cursor: str) -> tuple[datetime, int]:
+    try:
+        decoded = base64.urlsafe_b64decode(cursor.encode()).decode()
+    except binascii.Error:
+        raise HTTPException(status_code=400, detail=f"Bad cursor {cursor}")
+
+    payload = json.loads(decoded)
+    return datetime.fromisoformat(payload["created_at"]), payload["id"]
 
