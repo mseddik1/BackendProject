@@ -303,7 +303,6 @@ def get_products_cursor(
 
 ):
 
-    print("WE ARE INSIDE!")
     """
     This SAME function handles:
     - First request (cursor is None)

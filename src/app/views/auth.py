@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi.security import OAuth2PasswordRequestForm
 
-from src.app.Limiter.limiter import limiter
+from src.app.limiter.limiter import limiter
 from src.app.models import dbmodels
 from src.app.db.base import get_db
 from src.app.schemas import schemas

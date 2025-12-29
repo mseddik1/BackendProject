@@ -13,11 +13,12 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
-    email: EmailStr = None
+    email: Optional[EmailStr] = None
     role: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = False
     is_admin: Optional[bool] = False
+
 class UserResponse(BaseModel):
     id: int
     name : str
@@ -61,7 +62,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[float] = None
     stock_quantity: Optional[int] = None
-    is_active: Optional[bool] = None
+    is_active: Optional[bool] = False
     category: Optional[str] = None
     image_url: Optional[str] = None
 

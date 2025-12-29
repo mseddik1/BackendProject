@@ -36,7 +36,6 @@ def get_product_cursor(
         cursor: Optional[str] = None,
         db: Session = Depends(get_db)
 ):
-    print("WE ARE OUTSIDE!")
 
     return services.get_products_cursor(limit, cursor, db)
 
