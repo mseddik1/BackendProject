@@ -63,7 +63,7 @@ def verify_token(token:str)-> schemas.TokenData:
         return schemas.TokenData(email=email )
 
     except jwt.PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Could not verify credentials!", headers={"WWW-Authenticate":"Bearer"})
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Invalid or expired token! Please login again!", headers={"WWW-Authenticate":"Bearer"})
 
 
 def refresh_token(

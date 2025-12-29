@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from src.app.db.base import get_db
 from src.app.models import dbmodels
 from src.app.schemas import schemas
-from src.app.Limiter.limiter import setup_rate_limiting
+from src.app.limiter.limiter import setup_rate_limiting
 from src.app.workers import jobs
 from src.app.views.auth import auth_router
 from src.app.views.users import users_router
