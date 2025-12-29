@@ -41,7 +41,7 @@ def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(s
 
 
 @users_router.put("/{user_id}",response_model=schemas.UserResponse)
-def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.require_admin) , db: Session = Depends(get_db)):
+def update_user(user_id: int, user: schemas.UserUpdate, current_user:dbmodels.User = Depends(services.require_admin) , db: Session = Depends(get_db)):
    return services.update_user(user_id, user, current_user,db)
 
 
