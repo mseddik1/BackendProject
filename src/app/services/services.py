@@ -44,13 +44,16 @@ def register_user(user:schemas.UserCreate, db: Session ):
     db_user =db.query(dbmodels.User).filter(dbmodels.User.email==user.email).first()
     if db_user and db_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User exists!", headers={"WWW-Authenticate":"Bearer"})
-    confirm = security.send_confirmation_email(user, db)
     if db_user and not db_user.is_active:
+        confirm = security.send_confirmation_email(db_user, db)
         return {
         "user" :db_user,
         "confirm" : confirm,
         "details": "User already registered, please confirm your email!"
-    }
+        }
+
+    confirm = security.send_confirmation_email(user, db)
+
     hashed_pwd = security.hash_pwd(user.password)
     db_user = dbmodels.User(
         name = user.name,

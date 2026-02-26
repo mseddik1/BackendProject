@@ -46,8 +46,8 @@ def update_user(user_id: int, user: schemas.UserUpdate, current_user:dbmodels.Us
 
 
 @users_router.delete("/{user_id}" )
-def detele_user(user_id:int, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
-   return services.detele_user(user_id, current_user, db)
+def delete_user(user_id:int, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
+   return services.delete_user(user_id, current_user, db)
 
 
 @users_router.get("/", response_model=List[schemas.UserResponse])

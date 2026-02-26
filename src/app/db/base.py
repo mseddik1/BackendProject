@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 #Database setup
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DB_PATH = "/Users/mseddik/IdeaProjects/Backend Project I/users.db"
+DB_PATH = os.getenv("DB_PATH", "users.db")
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread":False})
