@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 
 
 class UserCreate(BaseModel):
-    name : Optional[str]
+    name : constr(min_length=1, max_length=100) #I added this to test if i create a user with more than 100 chars. It gave an error :D
     email : EmailStr
     role :  Optional[str]
     password : Optional[str]
