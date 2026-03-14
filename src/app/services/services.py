@@ -252,6 +252,7 @@ def update_product(product_id: int, product: schemas.ProductUpdate, db: Session,
     for field, value in update_data.items():
         setattr(product_db, field, value)
     product_db.updated_by = current_user.email
+    product_db.updated_at = datetime.now()
 
 
     db.commit()
