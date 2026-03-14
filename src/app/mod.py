@@ -13,7 +13,7 @@ with engine.connect() as conn:
     # conn.execute(text("UPDATE products SET updated_by = 'admin' WHERE updated_by = 'system'"))
     # print(conn.execute(text("SELECT * FROM users WHERE email = 'mseddik@noon.com';")).fetchall())
     # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
-    # print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
+    print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM users ;")).fetchall())
     print(conn.execute(text("SELECT * FROM products ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())

@@ -1,3 +1,4 @@
+import datetime
 import time
 from sqlalchemy.orm import Session
 from src.app.db import base
@@ -31,6 +32,7 @@ def process_publish_product_job(db: Session, job: dbmodels.Job):
 
 
     product_db.is_active = True
+    product_db.updated_at = datetime.now()
     db.commit()
 
     print(f"[WORKER] Published product {product_id} (job {job.id})")
