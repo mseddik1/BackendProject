@@ -10,6 +10,10 @@ class UserCreate(BaseModel):
     role :  Optional[str]
     password : Optional[str]
 
+class UserVerify(BaseModel):
+    email: EmailStr
+    code: constr(min_length=6, max_length=6)
+
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -93,7 +97,11 @@ class ProductListResponse(BaseModel):
     total: int
     items: List[Product]
 
-
+class UserListResponse(BaseModel):
+    page: int
+    per_page: int
+    total: int
+    users: List[UserResponse]
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

@@ -16,7 +16,7 @@ products_router = APIRouter(prefix="/products", tags=["Products"])
 
 @products_router.get("/", response_model=schemas.ProductListResponse)
 def get_all_products(page:int = 1, per_page:int = 10, db:Session =Depends(get_db), _:dbmodels.User = Depends(services.get_current_active_user)):
-    total, items = services.get_all_products(db, page, per_page,_)
+    total, items = services.get_all_products(db, page, per_page)
     return {
         "page": page,
         "per_page": per_page,

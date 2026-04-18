@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, select
 from fastapi import HTTPException, status, Response
 
+from src.app.core.security import send_confirmation_email
 from src.app.enums import enums
 from src.app.schemas import schemas
 from src.app.core import security
@@ -72,19 +73,40 @@ def register_user(user:schemas.UserCreate, db: Session ):
         "confirm" : confirm
     }
 
+login_counter = 0
+
 def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     user = db.query(dbmodels.User).filter(dbmodels.User.email==form_data.username).first()
 
-    if not user or not security.verify_pwd(form_data.password, user.hashed_pwd):
+    if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Unauthorized!", headers={"WWW-Authenticate":"Bearer"})
 
+    if user.failed_attempts >= 3 :
+        user.is_active = False
+        db.commit()
+        db.refresh(user)
+        send_confirmation_email(user, db)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Too many failed attempts. Please verify your email." )
+
+    if not security.verify_pwd(form_data.password, user.hashed_pwd):
+        user.failed_attempts += 1
+        db.commit()
+        db.refresh(user)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Unauthorized!", headers={"WWW-Authenticate":"Bearer"})
+
+
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive!", headers={"WWW-Authenticate":"Bearer"})
+        send_confirmation_email(user, db)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive, please check your email to activate it!", headers={"WWW-Authenticate":"Bearer"})
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRES)
     access_token= security.create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
     refresh_token = security.create_refresh_token(data ={"sub":user.email}, expires_delta=refresh_token_expires)
+
+    user.failed_attempts = 0
+    db.commit()
+    db.refresh(user)
 
     response = JSONResponse(
         content={
@@ -109,7 +131,7 @@ def logout(response: Response):
     response.delete_cookie(
         key="refresh_token",
         httponly=True,
-        secure=True,     # keep same attributes as set_cookie
+        secure=False,     # keep same attributes as set_cookie
         samesite="lax"
     )
 
@@ -196,8 +218,21 @@ def delete_user(user_id:int, current_user:dbmodels.User , db: Session ):
 
     return {"message":"User deleted!"}
 
-def get_all_users(db: Session):
-    return db.query(dbmodels.User).all()
+
+def search_user_email(email:str, db: Session):
+    user_db = db.query(dbmodels.User).filter(dbmodels.User.email == email).first()
+    if not user_db:
+        raise HTTPException(status_code=404, detail = "user not found!")
+
+    return user_db
+
+
+def get_all_users(page:int, per_page:int, db: Session):
+    skip = (page - 1) * per_page
+    limit = per_page
+    total = db.query(dbmodels.User).count()
+    users = db.query(dbmodels.User).offset(skip).limit(limit).all()
+    return total, users
 
 
 def require_admin(current_user:dbmodels.User = Depends(get_current_active_user)):
@@ -205,7 +240,7 @@ def require_admin(current_user:dbmodels.User = Depends(get_current_active_user))
         raise HTTPException(status_code=403, detail="You are not an admin!")
     return current_user
 
-def get_all_products(db: Session, page: int, per_page: int,_: dbmodels.User):
+def get_all_products(db: Session, page: int, per_page: int):
     skip = (page - 1) * per_page
     limit = per_page
     total = db.query(dbmodels.Products).count()

@@ -1,3 +1,5 @@
+import random
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
@@ -92,7 +94,7 @@ def refresh_token(
         raise HTTPException(status_code=401, detail="User no longer exists")
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
-    new_access_token = create_refresh_token(data ={"sub":user.email}, expires_delta=access_token_expires)
+    new_access_token = create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
 
     return {"access_token": new_access_token, "token_type": "bearer"}
 
@@ -129,7 +131,7 @@ def decode_password_reset_token(token: str) -> dict:
     return payload
 
 def create_confirm_email_token(email: str) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.utcnow() + timedelta(minutes=5)
     to_encode = {
         "sub": email,
         "type": "email_confirmation",
@@ -250,6 +252,8 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
     token= create_confirm_email_token(user.email)
 
     confirm_email_link = f"https://seymour-intersocial-vicenta.ngrok-free.dev/auth/confirm-email?token={token}"
+    generate_key_link = f"https://seymour-intersocial-vicenta.ngrok-free.dev/auth/generate-key?token={token}"
+
     #http://127.0.0.1:8000
     html_body = f"""
     <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
@@ -258,7 +262,7 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
         <p>Please confirm your email by clicking the button below:</p>
 
         <p>
-            <a href="{confirm_email_link}" 
+            <a href="{generate_key_link}" 
                style="background-color: #4CAF50; color: white; padding: 10px 18px; 
                       text-decoration: none; border-radius: 4px; font-weight: bold;">
                 Confirm Email
@@ -266,7 +270,7 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
         </p>
 
         # <p>If the button doesn’t work, here is the link:</p>
-        # <p><a href="{confirm_email_link}">{confirm_email_link}</a></p>
+        # <p><a href="{generate_key_link}">{generate_key_link}</a></p>
 
         <br>
         <p>Best regards,<br>Your App Team</p>
@@ -277,8 +281,142 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
 
     return {
         "detail": "A confirmation link has been sent. Check your email to confirm.",
-        "confirm_email_link": confirm_email_link
+        "generate_key_link": generate_key_link
     }
+
+def generate_confirmation_key(token:str, db: Session):
+    try:
+        data = decode_email_confirmation_token(token)
+    except PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token")
+
+    if data.get("type") != "email_confirmation":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token type"
+        )
+
+    email = data.get("sub")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token payload",
+        )
+
+    user = db.query(dbmodels.User).filter(dbmodels.User.email == email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User not found"
+        )
+
+
+    confirmation_key = random.randint(100000, 999999)
+    user.confirmation_key = confirmation_key
+    user.confirmation_expires_at = datetime.now() + timedelta(minutes=1)
+    user.failed_otp_attempts = 0
+    db.commit()
+    db.refresh(user)
+
+    html_body = f"""
+    <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
+
+        <p>Hi {user.name} - {user.role},</p>
+
+        <p>Your confirmation code is:</p>
+
+        <div style="
+            font-size: 28px; 
+            font-weight: bold; 
+            letter-spacing: 5px; 
+            color: #4CAF50;
+            margin: 20px 0;
+        ">
+            {confirmation_key}
+        </div>
+
+        <p>This code will expire in 1 minute!.</p>
+
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+
+        <br>
+        <p>Best regards,<br>Your App Team</p>
+
+    </div>
+    """
+    return HTMLResponse(content=html_body)
+
+
+def verify_confirmation_key(payload:schemas.UserVerify, db:Session):
+    email = payload.email
+    code = int(payload.code)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid token payload",
+        )
+
+    user = db.query(dbmodels.User).filter(dbmodels.User.email == email).first()
+
+    if user.failed_otp_attempts >= 3:
+        user.is_active = False
+        user.confirmation_key = None
+        user.locked_until = datetime.now() + timedelta(minutes=1) #Here i am making user locked for one minute
+        user.failed_otp_attempts = 0
+        db.commit()
+        db.refresh(user)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Too many failed attempts. Please try again later!")
+
+    if user.locked_until and user.locked_until > datetime.now():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Please try again later!")
+
+
+    if code is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid code",
+        )
+
+    if user.confirmation_key is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid confirmation_key",
+        )
+    if user.confirmation_expires_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid expiry time",
+        )
+
+    if user.confirmation_key == code and user.confirmation_expires_at < datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code expired!",
+        )
+
+    if user.confirmation_key != code:
+        user.failed_otp_attempts += 1
+        db.commit()
+        db.refresh(user)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wrong code!",
+        )
+    user.is_active = True
+    user.failed_otp_attempts = 0
+    user.locked_until = None
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "detail": "Account verified!"
+    }
+
 
 def confirm_email(token: str,db: Session):
     try:
@@ -310,6 +448,7 @@ def confirm_email(token: str,db: Session):
         )
 
     user.is_active = True
+    user.failed_attempts = 0
     db.commit()
     db.refresh(user)
 

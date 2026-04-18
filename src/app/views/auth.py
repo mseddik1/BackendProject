@@ -31,8 +31,20 @@ def register_user(request:Request, user:schemas.UserCreate, db: Session = Depend
 def confirm_email(request:Request, token:str =Query(None),  db: Session = Depends(get_db)):
     return security.confirm_email(token,db)
 
-@auth_router.post("/login", response_model=schemas.Token)
+@auth_router.get("/generate-key")
 @limiter.limit("3/minute")
+def generate_confirmation_key(request:Request,token:str = Query(None), db: Session = Depends(get_db)):
+    return security.generate_confirmation_key(token, db)
+
+
+@auth_router.post("/verify-key")
+@limiter.limit("5/minute")
+def verify_confirmation_key(request:Request, payload:schemas.UserVerify, db: Session = Depends(get_db)):
+    return security.verify_confirmation_key(payload, db)
+
+
+@auth_router.post("/login", response_model=schemas.Token)
+@limiter.limit("10/minute")
 def login_for_access_token(request:Request, form_data:OAuth2PasswordRequestForm =Depends(), db: Session = Depends(get_db)):
    return services.login_for_access_token(form_data, db)
 

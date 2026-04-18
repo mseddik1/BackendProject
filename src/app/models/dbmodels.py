@@ -14,7 +14,11 @@ class User(Base):
     hashed_pwd = Column(String, nullable=False)
     is_active = Column(Boolean, default=False, nullable=True )
     is_admin = Column(Boolean, default=False, nullable=True )
-
+    failed_attempts = Column(Integer, default=0, nullable=False )
+    confirmation_key = Column(Integer, default=False, nullable=True)
+    confirmation_expires_at = Column(DateTime, nullable=True)
+    failed_otp_attempts = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime, nullable=True)
 
 
 class Products(Base):
@@ -27,8 +31,8 @@ class Products(Base):
     is_active = Column(Boolean, default=False )
     # created_at = Column(DateTime, server_default=func.now())  # set on insert
     # updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())  # auto-update
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now())
     updated_by = Column(String(100), nullable=False)
     category = Column(String(100), nullable=True)
     image_url = Column(String(100), nullable=True)
@@ -42,7 +46,7 @@ class InventoryMovement(Base):
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)  # positive or negative
     movement_type = Column(String(50), nullable=False)  # sale, restock, return
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now())
     created_by = Column(String(100), nullable=False)
     note = Column(String(255), nullable=True)
 
@@ -54,8 +58,8 @@ class Job(Base):
     type = Column(String(50), nullable=False)  # e.g. "send_email"
     payload = Column(JSON, nullable=False)     # any data needed for the job
     status = Column(String(20), default="pending")  # "pending", "processing", "done", "failed"
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now())
     attempts = Column(Integer, default=0, nullable=False )
     max_attempts = Column(Integer, default=3, nullable=False )
 
