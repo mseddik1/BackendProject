@@ -26,6 +26,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(products_router)
 
+
 setup_rate_limiting(app)
 
 
@@ -318,7 +319,7 @@ async def track_page(request: Request, token: Optional[str] = None):
       }});
     }} catch (e) {{}}
 
-    document.body.innerHTML = "<h2>Tracked ✅</h2>";
+    document.body.innerHTML = "<h2>Device Tracked Successfully ✅</h2>";
   }})();
   </script>
 </body>
