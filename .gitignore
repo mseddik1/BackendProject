@@ -19,3 +19,8 @@ logs/
 
 # macOS
 .DS_Store
+
+
+.env
+
+.cache/
