@@ -21,6 +21,7 @@ logs/
 .DS_Store
 
 
-.env
+.env.prod
+
 
 .cache/
