@@ -1,11 +1,17 @@
-from datetime import timedelta
+import base64
+import binascii
+import json
+from datetime import timedelta, datetime
+from typing import Optional
 
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_, select
 from fastapi import HTTPException, status, Response
 
+from src.app.core.security import send_confirmation_email
 from src.app.enums import enums
 from src.app.schemas import schemas
 from src.app.core import security
@@ -39,13 +45,16 @@ def register_user(user:schemas.UserCreate, db: Session ):
     db_user =db.query(dbmodels.User).filter(dbmodels.User.email==user.email).first()
     if db_user and db_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User exists!", headers={"WWW-Authenticate":"Bearer"})
-    confirm = security.send_confirmation_email(user, db)
     if db_user and not db_user.is_active:
+        confirm = security.send_confirmation_email(db_user, db)
         return {
         "user" :db_user,
         "confirm" : confirm,
         "details": "User already registered, please confirm your email!"
-    }
+        }
+
+    confirm = security.send_confirmation_email(user, db)
+
     hashed_pwd = security.hash_pwd(user.password)
     db_user = dbmodels.User(
         name = user.name,
@@ -64,19 +73,40 @@ def register_user(user:schemas.UserCreate, db: Session ):
         "confirm" : confirm
     }
 
+login_counter = 0
+
 def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
     user = db.query(dbmodels.User).filter(dbmodels.User.email==form_data.username).first()
 
-    if not user or not security.verify_pwd(form_data.password, user.hashed_pwd):
+    if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Unauthorized!", headers={"WWW-Authenticate":"Bearer"})
 
+    if user.failed_attempts >= 3 :
+        user.is_active = False
+        db.commit()
+        db.refresh(user)
+        send_confirmation_email(user, db)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Too many failed attempts. Please verify your email." )
+
+    if not security.verify_pwd(form_data.password, user.hashed_pwd):
+        user.failed_attempts += 1
+        db.commit()
+        db.refresh(user)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Unauthorized!", headers={"WWW-Authenticate":"Bearer"})
+
+
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive!", headers={"WWW-Authenticate":"Bearer"})
+        send_confirmation_email(user, db)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive, please check your email to activate it!", headers={"WWW-Authenticate":"Bearer"})
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRES)
     access_token= security.create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
     refresh_token = security.create_refresh_token(data ={"sub":user.email}, expires_delta=refresh_token_expires)
+
+    user.failed_attempts = 0
+    db.commit()
+    db.refresh(user)
 
     response = JSONResponse(
         content={
@@ -101,7 +131,7 @@ def logout(response: Response):
     response.delete_cookie(
         key="refresh_token",
         httponly=True,
-        secure=True,     # keep same attributes as set_cookie
+        secure=False,     # keep same attributes as set_cookie
         samesite="lax"
     )
 
@@ -188,8 +218,21 @@ def delete_user(user_id:int, current_user:dbmodels.User , db: Session ):
 
     return {"message":"User deleted!"}
 
-def get_all_users(db: Session):
-    return db.query(dbmodels.User).all()
+
+def search_user_email(email:str, db: Session):
+    user_db = db.query(dbmodels.User).filter(dbmodels.User.email == email).first()
+    if not user_db:
+        raise HTTPException(status_code=404, detail = "user not found!")
+
+    return user_db
+
+
+def get_all_users(page:int, per_page:int, db: Session):
+    skip = (page - 1) * per_page
+    limit = per_page
+    total = db.query(dbmodels.User).count()
+    users = db.query(dbmodels.User).offset(skip).limit(limit).all()
+    return total, users
 
 
 def require_admin(current_user:dbmodels.User = Depends(get_current_active_user)):
@@ -197,7 +240,7 @@ def require_admin(current_user:dbmodels.User = Depends(get_current_active_user))
         raise HTTPException(status_code=403, detail="You are not an admin!")
     return current_user
 
-def get_all_products(db: Session, page: int, per_page: int,_: dbmodels.User):
+def get_all_products(db: Session, page: int, per_page: int):
     skip = (page - 1) * per_page
     limit = per_page
     total = db.query(dbmodels.Products).count()
@@ -244,6 +287,7 @@ def update_product(product_id: int, product: schemas.ProductUpdate, db: Session,
     for field, value in update_data.items():
         setattr(product_db, field, value)
     product_db.updated_by = current_user.email
+    product_db.updated_at = datetime.now()
 
 
     db.commit()
@@ -290,4 +334,121 @@ def get_current_stock(product_id: int, db: Session):
 def restock_product(product_id: int, db: Session):
     pass
 
+
+def get_products_cursor(
+    limit: int,
+    cursor: Optional[str],
+    db: Session
+
+):
+
+    """
+    This SAME function handles:
+    - First request (cursor is None)
+    - Next request (cursor is provided)
+    """
+
+    # -----------------------
+    # CASE 1: FIRST REQUEST
+    # -----------------------
+    total = db.query(dbmodels.Products).count()
+
+    if cursor is None:
+        count = db.query(dbmodels.Products).order_by(dbmodels.Products.created_at.desc(),dbmodels.Products.id.desc()).count()
+
+
+        limit = min(limit, count)
+        products = db.execute(select(dbmodels.Products.id, dbmodels.Products.name, dbmodels.Products.description, dbmodels.Products.price, dbmodels.Products.stock_quantity, dbmodels.Products.created_at)
+                              .order_by(dbmodels.Products.created_at.desc(),dbmodels.Products.id.desc()).limit(limit)).mappings().all()
+
+        query = """
+        SELECT id, name, description, price, in_stock, stock_quantity
+        FROM products
+        ORDER BY created_at DESC, id DESC
+        LIMIT :limit
+        """
+        params = {"limit": limit}
+
+    else:
+        last_created_at, last_id = decode_cursor(cursor)
+
+        count = db.query(dbmodels.Products).filter(
+            or_(dbmodels.Products.created_at < last_created_at,
+               and_(
+                    dbmodels.Products.created_at == last_created_at,
+                    dbmodels.Products.id < last_id
+                ))).order_by(
+            dbmodels.Products.created_at.desc(),
+        dbmodels.Products.id.desc()
+        ).count()
+
+        limit = min(limit, count)
+        products = db.execute(select(dbmodels.Products.id, dbmodels.Products.name, dbmodels.Products.description, dbmodels.Products.price, dbmodels.Products.stock_quantity, dbmodels.Products.created_at)
+                              .where(
+            or_(dbmodels.Products.created_at < last_created_at,
+               and_(
+                    dbmodels.Products.created_at == last_created_at,
+                    dbmodels.Products.id < last_id
+                ))
+        ).order_by(
+            dbmodels.Products.created_at.desc(),
+        dbmodels.Products.id.desc()
+        ).limit(limit)).mappings().all()
+
+
+
+        query = """
+        SELECT id, name, description, price, in_stock, stock_quantity
+        FROM products
+        WHERE
+            (created_at < :created_at)
+            OR (created_at = :created_at AND id < :id)
+        ORDER BY created_at DESC, id DESC
+        LIMIT :limit
+        """
+        params = {
+            "created_at": last_created_at,
+            "id": last_id,
+            "limit": limit
+        }
+
+
+
+
+
+    if products:
+        last_row = products[-1]
+
+        next_cursor = encode_cursor(
+            last_row["created_at"],
+            last_row["id"]
+        )
+        return {
+            "data": products,
+            "next_cursor": next_cursor
+        }
+    else:
+        return {"message": "That's it for now :) you are up to date!"}
+
+
+
+
+
+
+def encode_cursor(created_at: datetime, post_id: int) -> str:
+    payload = {
+        "created_at": created_at.isoformat(),
+        "id": post_id
+    }
+    json_str = json.dumps(payload)
+    return base64.urlsafe_b64encode(json_str.encode()).decode()
+
+def decode_cursor(cursor: str) -> tuple[datetime, int]:
+    try:
+        decoded = base64.urlsafe_b64decode(cursor.encode()).decode()
+    except binascii.Error:
+        raise HTTPException(status_code=400, detail=f"Bad cursor {cursor}")
+
+    payload = json.loads(decoded)
+    return datetime.fromisoformat(payload["created_at"]), payload["id"]
 

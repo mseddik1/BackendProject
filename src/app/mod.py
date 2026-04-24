@@ -14,10 +14,10 @@ with engine.connect() as conn:
     # print(conn.execute(text("SELECT * FROM users WHERE email = 'mseddik@noon.com';")).fetchall())
     # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
     # print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
-    # print(conn.execute(text("SELECT * FROM users ;")).fetchall())
-    # print(conn.execute(text("SELECT * FROM products ;")).fetchall())inventory_movements
+    print(conn.execute(text("SELECT * FROM users WHERE id=17;")).fetchall())
+    # print(conn.execute(text("SELECT * FROM products ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())
-    print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
+    # print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
 
 
 
@@ -31,8 +31,15 @@ with engine.connect() as conn:
     # conn.execute(text("ALTER TABLE products DROP COLUMN in_stock ;"))
     # conn.execute(text("ALTER TABLE tracking ADD COLUMN user_agent STRING DEFAULT '' ;"))
     # conn.execute(text("ALTER TABLE tracking DROP COLUMN user_agetnt ;"))
+    # conn.execute(text("ALTER TABLE users ADD COLUMN failed_attempts INTEGER DEFAULT 0"))
+    # conn.execute(text("ALTER TABLE users ADD COLUMN confirmation_key INTEGER"))
+    # conn.execute(text("ALTER TABLE users ADD COLUMN confirmation_expires_at DATETIME"))
+    # conn.execute(text("ALTER TABLE users ADD COLUMN failed_otp_attempts INTEGER DEFAULT 0"))
+    # conn.execute(text("ALTER TABLE users ADD COLUMN locked_until DATETIME"))
+
 
     # print(settings.SECRET_KEY)
+
 
 
 

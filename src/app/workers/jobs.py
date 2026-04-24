@@ -1,3 +1,4 @@
+import datetime
 import time
 from sqlalchemy.orm import Session
 from src.app.db import base
@@ -31,6 +32,7 @@ def process_publish_product_job(db: Session, job: dbmodels.Job):
 
 
     product_db.is_active = True
+    product_db.updated_at = datetime.now()
     db.commit()
 
     print(f"[WORKER] Published product {product_id} (job {job.id})")
@@ -56,6 +58,8 @@ def process_send_email(job: dbmodels.Job):
         server.starttls()  # Secure connection
         server.login(settings.SENDER_EMAIL, settings.APP_PASSWORD)
         server.sendmail(settings.SENDER_EMAIL, to_email, message.as_string())
+
+        print(f"[WORKER] Sent an email to  {to_email} (job {job.id})")
 
     return {"status": "Email sent!"}
 
@@ -87,23 +91,28 @@ def worker_loop():
             job.status = "processing"
             db.commit()
             db.refresh(job)
-            if  job.type == enums.JobType.PUBLISH_PRODUCT.value:
-                try:
-                    process_publish_product_job(db, job)
-                    job.status = "done"
-                except Exception as e:
-                    print(f"[WORKER] Job {job.id} failed: {e}")
-                    mark_job_failed_with_retry(job)
 
-            elif job.type == enums.JobType.SEND_EMAIL.value:
-                try:
-                    process_send_email(job)
-                    job.status = "done"
-                except Exception as e:
-                    print(f"[WORKER] Job {job.id} failed: {e}")
-                    mark_job_failed_with_retry(job)
+            match job.type:
+                case enums.JobType.PUBLISH_PRODUCT.value:
+                    try:
+                        process_publish_product_job(db, job)
+                        job.status = "done"
+                    except Exception as e:
+                        print(f"[WORKER] Job {job.id} failed: {e}")
+                        mark_job_failed_with_retry(job)
+
+                case enums.JobType.SEND_EMAIL.value:
+                    try:
+                        process_send_email(job)
+                        job.status = "done"
+                    except Exception as e:
+                        print(f"[WORKER] Job {job.id} failed: {e}")
+                        mark_job_failed_with_retry(job)
+
 
             db.commit()
+            db.refresh(job)
+
         finally:
             db.close()
 

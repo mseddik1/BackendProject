@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from src.app.db.base import get_db
 from src.app.models import dbmodels
 from src.app.schemas import schemas
-from src.app.Limiter.limiter import setup_rate_limiting
+from src.app.limiter.limiter import setup_rate_limiting
 from src.app.workers import jobs
 from src.app.views.auth import auth_router
 from src.app.views.users import users_router
@@ -25,6 +25,7 @@ app = FastAPI(title="Integration with SQL!")
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(products_router)
+
 
 setup_rate_limiting(app)
 
@@ -46,6 +47,7 @@ def start_background_workers():
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
+
     start = time.time()
 
     ip = request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
@@ -58,14 +60,14 @@ async def log_requests(request: Request, call_next):
     duration_ms = int((time.time() - start) * 1000)
 
     # Replace print with proper logging / DB insert if you want
-    print({
-        "ip": ip,
-        "ua": ua,
-        "method": method,
-        "path": path,
-        "status": response.status_code,
-        "duration_ms": duration_ms,
-    })
+    # print({
+    #     "ip": ip,
+    #     "ua": ua,
+    #     "method": method,
+    #     "path": path,
+    #     "status": response.status_code,
+    #     "duration_ms": duration_ms,
+    # })
 
     return response
 
@@ -317,7 +319,7 @@ async def track_page(request: Request, token: Optional[str] = None):
       }});
     }} catch (e) {{}}
 
-    document.body.innerHTML = "<h2>Tracked ✅</h2>";
+    document.body.innerHTML = "<h2>Device Tracked Successfully ✅</h2>";
   }})();
   </script>
 </body>

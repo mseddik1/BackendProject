@@ -1,3 +1,4 @@
+from src.app.schemas.schemas import UserListResponse
 from src.app.db.base import get_db
 from src.app.models import dbmodels
 from src.app.schemas import schemas
@@ -30,8 +31,12 @@ def verify_token_endpoint(current_user:dbmodels.User = Depends(services.get_curr
 
 
 @users_router.get("/{user_id}", response_model= schemas.UserResponse)
-def get_user(user_id: int, current_user:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db) ):
+def get_user(user_id: int, _:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db) ):
     return services.get_user(user_id, db)
+
+@users_router.get("/search/{email}", response_model= schemas.UserResponse)
+def search_user_email(email:str, _:dbmodels.User = Depends(services.get_current_active_user), db: Session = Depends(get_db)):
+    return services.search_user_email(email, db)
 
 @users_router.post("/create", response_model= schemas.UserResponse)
 def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
@@ -41,18 +46,24 @@ def create_user(user: schemas.UserCreate, current_user:dbmodels.User = Depends(s
 
 
 @users_router.put("/{user_id}",response_model=schemas.UserResponse)
-def update_user(user_id: int, user: schemas.UserCreate, current_user:dbmodels.User = Depends(services.require_admin) , db: Session = Depends(get_db)):
+def update_user(user_id: int, user: schemas.UserUpdate, current_user:dbmodels.User = Depends(services.require_admin) , db: Session = Depends(get_db)):
    return services.update_user(user_id, user, current_user,db)
 
 
 @users_router.delete("/{user_id}" )
-def detele_user(user_id:int, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
-   return services.detele_user(user_id, current_user, db)
+def delete_user(user_id:int, current_user:dbmodels.User = Depends(services.require_admin), db: Session = Depends(get_db)):
+   return services.delete_user(user_id, current_user, db)
 
 
-@users_router.get("/", response_model=List[schemas.UserResponse])
-def get_all_users(current_user:dbmodels.User = Depends(services.get_current_active_user),db: Session = Depends(get_db)):
-    return services.get_all_users(db)
+@users_router.get("/", response_model=UserListResponse)
+def get_all_users(page:int =1, per_page:int = 5,db: Session = Depends(get_db) , _:dbmodels.User = Depends(services.require_admin)):
+    total,users= services.get_all_users(page, per_page, db)
+    return{
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "users": users
+    }
 
 
 

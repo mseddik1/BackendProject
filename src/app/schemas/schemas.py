@@ -1,23 +1,28 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, constr
 
 
 class UserCreate(BaseModel):
-    name : Optional[str]
+    name : constr(min_length=1, max_length=100) #I added this to test if i create a user with more than 100 chars. It gave an error :D
     email : EmailStr
     role :  Optional[str]
     password : Optional[str]
 
+class UserVerify(BaseModel):
+    email: EmailStr
+    code: constr(min_length=6, max_length=6)
+
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
-    email: EmailStr = None
+    email: Optional[EmailStr] = None
     role: Optional[str] = None
     password: Optional[str] = None
     is_active: Optional[bool] = False
     is_admin: Optional[bool] = False
+
 class UserResponse(BaseModel):
     id: int
     name : str
@@ -61,7 +66,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[float] = None
     stock_quantity: Optional[int] = None
-    is_active: Optional[bool] = None
+    is_active: Optional[bool] = False
     category: Optional[str] = None
     image_url: Optional[str] = None
 
@@ -92,7 +97,11 @@ class ProductListResponse(BaseModel):
     total: int
     items: List[Product]
 
-
+class UserListResponse(BaseModel):
+    page: int
+    per_page: int
+    total: int
+    users: List[UserResponse]
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

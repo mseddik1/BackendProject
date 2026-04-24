@@ -3,7 +3,9 @@ import datetime
 import shutil
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = "/Users/mseddik/IdeaProjects/Backend Project I/users.db"
+DB_PATH = os.getenv("DB_PATH", "users.db")
+print("DB_PATH BACKUP:", DB_PATH)
+
 BACKUP_DIR = os.path.join(BASE_DIR, "backups")
 
 # Ensure backup directory exists
