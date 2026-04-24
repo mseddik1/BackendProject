@@ -99,8 +99,8 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
         send_confirmation_email(user, db)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "User inactive, please check your email to activate it!", headers={"WWW-Authenticate":"Bearer"})
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
-    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRES)
+    access_token_expires = timedelta(minutes=settings.access_token_expires)
+    refresh_token_expires = timedelta(days=settings.refresh_token_expires)
     access_token= security.create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
     refresh_token = security.create_refresh_token(data ={"sub":user.email}, expires_delta=refresh_token_expires)
 
@@ -121,7 +121,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm, db: Session):
         httponly=True,
         secure=False,  # True in production with HTTPS
         samesite="lax",
-        max_age=60 * 60 * 24 * settings.REFRESH_TOKEN_EXPIRES
+        max_age=60 * 60 * 24 * settings.refresh_token_expires
     )
     return response
 

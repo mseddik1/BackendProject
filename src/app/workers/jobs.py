@@ -47,17 +47,17 @@ def process_send_email(job: dbmodels.Job):
     html_body = data["html_body"]
     # Create the MIME message
     message = MIMEMultipart()
-    message["From"] = settings.SENDER_EMAIL
+    message["From"] = settings.backend_proj_sender_email
     message["To"] = to_email
     message["Subject"] = subject
 
     message.attach(MIMEText(html_body, "html"))
 
     # Send via Gmail SMTP
-    with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+    with smtplib.SMTP(settings.smtp_server, settings.smtp_port) as server:
         server.starttls()  # Secure connection
-        server.login(settings.SENDER_EMAIL, settings.APP_PASSWORD)
-        server.sendmail(settings.SENDER_EMAIL, to_email, message.as_string())
+        server.login(settings.backend_proj_sender_email, settings.backend_proj_sender_password)
+        server.sendmail(settings.backend_proj_sender_email, to_email, message.as_string())
 
         print(f"[WORKER] Sent an email to  {to_email} (job {job.id})")
 

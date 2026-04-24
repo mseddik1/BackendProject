@@ -39,7 +39,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
     to_encode.update({"exp":expire})
     to_encode.update({"type":"access"})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.backend_proj_secret_key, algorithm=settings.algorithm)
 
     return encoded_jwt
 
@@ -52,13 +52,13 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
 
     to_encode.update({"exp":expire})
     to_encode.update({"type":"refresh"})
-    encoded_refresh_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_refresh_token = jwt.encode(to_encode, settings.backend_proj_secret_key, algorithm=settings.algorithm)
     return encoded_refresh_token
 
 
 def verify_token(token:str)-> schemas.TokenData:
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.backend_proj_secret_key, algorithms=[settings.algorithm])
         email: str = payload.get("sub")
         if email is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Could not verify credentials!", headers={"WWW-Authenticate":"Bearer"})
@@ -81,7 +81,7 @@ def refresh_token(
         raise HTTPException(status_code=401, detail="Missing refresh token")
 
     try:
-        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(refresh_token, settings.backend_proj_secret_key, algorithms=[settings.algorithm])
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -93,7 +93,7 @@ def refresh_token(
     if not user:
         raise HTTPException(status_code=401, detail="User no longer exists")
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRES)
+    access_token_expires = timedelta(minutes=settings.access_token_expires)
     new_access_token = create_access_token(data ={"sub":user.email}, expires_delta=access_token_expires)
 
     return {"access_token": new_access_token, "token_type": "bearer"}
@@ -112,8 +112,8 @@ def create_password_reset_token(email: str) -> str:
     }
     encoded_jwt = jwt.encode(
         to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM,
+        settings.backend_proj_secret_key,
+        algorithm=settings.algorithm,
     )
     return encoded_jwt
 
@@ -122,8 +122,8 @@ def decode_password_reset_token(token: str) -> dict:
 
     payload = jwt.decode(
         token,
-        settings.SECRET_KEY,
-        algorithms=[settings.ALGORITHM],
+        settings.backend_proj_secret_key,
+        algorithms=[settings.algorithm],
     )
     # optional extra check, but we'll check again later in the endpoint
     if payload.get("type") != "password_reset":
@@ -137,12 +137,12 @@ def create_confirm_email_token(email: str) -> str:
         "type": "email_confirmation",
         "exp": expire
     }
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.backend_proj_secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 
 def decode_email_confirmation_token(token: str) -> dict:
-    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    payload = jwt.decode(token, settings.backend_proj_secret_key, algorithms=[settings.algorithm])
     return payload
 
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session):
