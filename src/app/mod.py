@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -14,7 +16,7 @@ with engine.connect() as conn:
     # print(conn.execute(text("SELECT * FROM users WHERE email = 'mseddik@noon.com';")).fetchall())
     # print(conn.execute(text("SELECT * FROM products WHERE id = 2;")).fetchall())
     # print(conn.execute(text("SELECT * FROM jobs ;")).fetchall())
-    print(conn.execute(text("SELECT * FROM users WHERE id=17;")).fetchall())
+    # print(conn.execute(text("SELECT * FROM users WHERE id=17;")).fetchall())
     # print(conn.execute(text("SELECT * FROM products ;")).fetchall())
     # print(conn.execute(text("SELECT * FROM inventory_movements ;")).fetchall())
     # print(conn.execute(text("SELECT id FROM tracking ;")).fetchall())
@@ -25,7 +27,7 @@ with engine.connect() as conn:
     # conn.execute(text("ALTER TABLE jobs ADD COLUMN attempts INTEGER DEFAULT 0;"))
     # conn.execute(text("ALTER TABLE jobs ADD COLUMN max_attempts INTEGER DEFAULT 3;"))
     # conn.execute(text("UPDATE jobs SET status = 'pending' WHERE id = '4';"))
-    # conn.execute(text("UPDATE users SET is_active = 0 WHERE email = 'mahmoud.seddik@hotmail.com';"))
+    conn.execute(text("UPDATE users SET is_active = 0 WHERE email = 'mahmoud.seddik@hotmail.com';"))
     # conn.execute(text("DELETE from users WHERE id = '9';"))
     # conn.execute(text("ALTER TABLE products ADD COLUMN stock_quantity INTEGER DEFAULT 0;"))
     # conn.execute(text("ALTER TABLE products DROP COLUMN in_stock ;"))
@@ -38,7 +40,8 @@ with engine.connect() as conn:
     # conn.execute(text("ALTER TABLE users ADD COLUMN locked_until DATETIME"))
 
 
-    # print(settings.SECRET_KEY)
+
+
 
 
 

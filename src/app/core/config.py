@@ -5,17 +5,16 @@ from pydantic_settings import BaseSettings
 # Security Config
 #This because i do have the 
 APP_DIR = Path(__file__).resolve().parent.parent
-ENV_PATH = APP_DIR / ".env.dev"
+ENV_PATH = APP_DIR / ".env.prod"
 class Settings(BaseSettings):
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRES: int
-    REFRESH_TOKEN_EXPIRES: int
-    SMTP_SERVER: str
-    SMTP_PORT: int
-    SENDER_EMAIL: str
-    APP_PASSWORD: str
-    DEMO_API_KEY: str | None = None  # optional
+    backend_proj_secret_key: str
+    algorithm: str
+    access_token_expires: int
+    refresh_token_expires: int
+    smtp_server: str
+    smtp_port: int
+    backend_proj_sender_email: str
+    backend_proj_sender_password: str
 
     # class Config:
     #     env_file = ".env.dev"
