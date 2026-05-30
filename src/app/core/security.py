@@ -251,13 +251,12 @@ def send_confirmation_email(user: schemas.UserCreate, db: Session):
 
     token= create_confirm_email_token(user.email)
 
-    confirm_email_link = f"https://api-mseddik.duckdns.org /auth/confirm-email?token={token}"
-    generate_key_link = f"https://api-mseddik.duckdns.org /auth/generate-key?token={token}"
+    confirm_email_link = f"{settings.base_url}/auth/confirm-email?token={token}"
 
-    #https://api-mseddik.duckdns.org -> domain name
-    #https://seymour-intersocial-vicenta.ngrok-free.dev -> Ngrok
-    #http://127.0.0.1:8000 -> local
-    #http://35.159.33.128:8000 -> aws server
+    generate_key_link = f"{settings.base_url}/auth/generate-key?token={token}"
+
+
+
     html_body = f"""
     <div style="font-family: Arial, sans-serif; font-size: 15px; color: #333;">
         <p>Hi {user.name} - {user.role},</p>
