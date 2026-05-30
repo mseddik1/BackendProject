@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     smtp_port: int
     backend_proj_sender_email: str
     backend_proj_sender_password: str
+    base_url: str
 
     # class Config:
     #     env_file = ".env.dev"
