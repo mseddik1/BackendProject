@@ -1,6 +1,9 @@
 import os
 import datetime
 import shutil
+import subprocess
+
+from app.core.config import Settings, settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.getenv("DB_PATH", "users.db")
@@ -13,10 +16,24 @@ os.makedirs(BACKUP_DIR, exist_ok=True)
 
 def backup_sqlite():
     date_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = os.path.join(BACKUP_DIR, f"db_backup_{date_str}.sqlite3")
+    # backup_path = os.path.join(BACKUP_DIR, f"db_backup_{date_str}.sqlite3")
+    backup_path = os.path.join(BACKUP_DIR, f"db_backup_{date_str}.dump")
+
 
     # Copy database file
-    shutil.copy(DB_PATH, backup_path)
+    # shutil.copy(DB_PATH, backup_path)
+
+    #Now i am having copy from the postgresql
+    subprocess.run(
+        [
+            "pg_dump",
+            "-Fc",  # custom compressed format
+            "-f",
+            backup_path,
+            settings.db_base_url,
+        ],
+        check=True,
+    )
     print(f"[OK] Backup created: {backup_path}")
 
     # Keep only last 7 backups

@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     backend_proj_sender_email: str
     backend_proj_sender_password: str
     base_url: str
-
+    db_password: str
+    db_base_url: str
     # class Config:
     #     env_file = ".env.dev"
 

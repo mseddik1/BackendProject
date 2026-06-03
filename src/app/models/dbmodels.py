@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, func, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, func, JSON, ForeignKey, Numeric
 from src.app.db.base import Base, engine
 
 
@@ -26,7 +26,7 @@ class Products(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True)
     description = Column(String(100), nullable=False)
-    price = Column(Float(100), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False) # in postgresql it needs Numeric(10, 2) instead of Float(100)
     stock_quantity = Column(Integer, nullable=False, default=0)
     is_active = Column(Boolean, default=False )
     # created_at = Column(DateTime, server_default=func.now())  # set on insert
